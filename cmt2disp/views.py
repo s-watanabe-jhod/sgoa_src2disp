@@ -153,9 +153,9 @@ def driver(alpha, dfsource, sites):
 	#beach1 = beach(mec, xy=loc, width=0.2, linewidth=0.4, facecolor="darkmagenta", zorder=3)
 	#ax.add_collection(beach1)
 	ax1.plot(dfsource.Longitude, dfsource.Latitude, linestyle="None",
-			c="darkmagenta", marker='*', markersize="25", zorder=6)
+			c="darkmagenta", marker='*', markersize="25", zorder=3)
 	ax2.plot(dfsource.Longitude, dfsource.Latitude, linestyle="None",
-			c="darkmagenta", marker='*', markersize="25", zorder=6)
+			c="darkmagenta", marker='*', markersize="25", zorder=3)
 	
 	ans = "done"
 	flt += "  Length: %5.1f km, Width: %5.1f km, Slip: %5.1f cm" \
@@ -174,6 +174,7 @@ def driver(alpha, dfsource, sites):
 	dy = grdresult["N-ward-cm"].values / scl
 	ax2.quiver(x0, y0, dx, dy, units="inches", angles="xy", scale=1,
 			  scale_units="inches", color="gray", zorder=4, width=0.02)
+	ax2.set_title("Max arrow shows %4.1f cm disp." % scl)
 	
 	# site deformation
 	result = calc_dc3d(alpha, dfsource.iloc[0,:], sites)
