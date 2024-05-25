@@ -14,7 +14,7 @@
 <body>
 
 <h1>CMT to Displacement via DC3D for SGO-A sites</h1>
-<h3>NOTE:: This is written with PyScript (alpha-version), so some changes will be needed in the future.</h3>
+<h3>NOTE:: This is written with PyScript (alpha-version), so some changes will be needed in the future.</li><h3>
 <p>Created by Watanabe and Ishikawa (2024)</p>
 <ul>
 <li>This program is distributed under MIT License (see below)</li>
