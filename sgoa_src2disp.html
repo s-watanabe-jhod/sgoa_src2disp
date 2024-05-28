@@ -8,18 +8,18 @@
   <py-config>
     packages = ["matplotlib", "pandas", "numpy"]
   </py-config>
-  <title>DC3D for SGO-A sites</title>
+  <title>Calculate displacement for SGO-A sites</title>
 </head>
 
 <body>
 
-<h1>CMT to Displacement via DC3D for SGO-A sites</h1>
+<h1>Source to Displacement via Okada's formulation for SGO-A sites</h1>
 <h3>NOTE:: This is written with PyScript (alpha-version), so some changes will be needed in the future.</h3>
 <p>Created by Watanabe and Ishikawa (2024)</p>
 <ul>
 <li>This program is distributed under MIT License (see below)</li>
 <li>For details and the use of results, please refer Okada (1992) [Bull. Seism. Soc. Am., 82, 1018-1040]. </li>
-<li>Original FORTRAN code "DC3D" is distributed <a href="https://www.bosai.go.jp/e/dc3d.html">here</a>.</li>
+<li>Okada's original FORTRAN code "DC3D" is distributed <a href="https://www.bosai.go.jp/e/dc3d.html">here</a>.</li>
 <li>Source parameters are available at, e.g., 
 <a href="https://www.hinet.bosai.go.jp/?LANG=ja">Hi-net</a>, 
 <a href="https://www.fnet.bosai.go.jp/top.php?LANG=ja">F-net</a>, or 
@@ -27,7 +27,7 @@
 <li>GEBCO 2023 Grid (<a href="https://doi.org/10.5285/f98b053b-0cbc-6c23-e053-6c86abc0af7b">GEBCO Compilation Group, 2023</a>) is used for the topography in the map.</li>
 </ul>
 
-<h2>CMT information (input)</h2>
+<h2>Source information (input)</h2>
   <input id="alp" class="py-input" value='0.6667' type="text"> alpha (default=2/3) <br>
   <input id="lat" class="py-input" value='35.0' type="text"> Latitude  [deg] <br>
   <input id="lon" class="py-input" value='140.0' type="text"> Longitude  [deg] <br>
@@ -38,8 +38,8 @@
   <input id="mag" class="py-input" value='7.0' type="text"> Mw <br>
   <button id="calc" class="py-button" type="submit" py-click="calc()">Calc.</button><br>
 
-<py-script src="cmt2disp/views.py"></py-script>
-<py-script src="cmt2disp/dc3d.py"></py-script>
+<py-script src="src2disp/views.py"></py-script>
+<py-script src="src2disp/dc3d.py"></py-script>
 <py-script>
 import pandas as pd
 import numpy as np
