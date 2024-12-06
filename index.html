@@ -76,7 +76,7 @@ def calc():
     chk = chk and (dep > 0.)
     chk = chk and (str <= 360.) and (str >= -360.)
     chk = chk and (dip <= 90.) and (dip >= 0.)
-    chk = chk and (rak <= 90.) and (rak >= 0.)
+    chk = chk and (rak <= 180.) and (rak >= -180.)
     chk = chk and (mag > 0.)
   except:
     chk = False
