@@ -4,10 +4,10 @@
   <link rel="stylesheet" href="https://pyscript.net/releases/2024.11.1/core.css">
   <script type="module" src="https://pyscript.net/releases/2024.11.1/core.js"></script>
   <!--<py-env>
-  </py-env>
+  </py-env>-->
   <py-config>
     packages = ["matplotlib", "pandas", "numpy"]
-  </py-config>-->
+  </py-config>
   <title>Calculate displacement for SGO-A sites</title>
 </head>
 
@@ -40,7 +40,7 @@
 
 <script type="py" src="src2disp/views.py"></script>
 <script type="py" src="src2disp/dc3d.py"></script>
-<py-script config="./pyscript.json">
+<py-script>
 from pyscript import display
 import pandas as pd
 import numpy as np
