@@ -1,3 +1,3 @@
 {
-    "packages": ["matplotlib", "pandas", "numpy", "pyarrow"]
+    "packages": ["matplotlib", "pandas", "numpy"]
 }
