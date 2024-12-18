@@ -3,11 +3,11 @@
   <meta charset="utf-8"/>
   <link rel="stylesheet" href="https://pyscript.net/releases/2024.11.1/core.css">
   <script type="module" src="https://pyscript.net/releases/2024.11.1/core.js"></script>
-  <py-env>
+  <!--<py-env>
   </py-env>
   <py-config>
     packages = ["matplotlib", "pandas", "numpy"]
-  </py-config>
+  </py-config>-->
   <title>Calculate displacement for SGO-A sites</title>
 </head>
 
@@ -38,9 +38,9 @@
   <input id="mag" class="py-input" value='7.0' type="text"> Mw <br>
   <button id="calc" class="py-button" type="submit" py-click="calc()">Calc.</button><br>
 
-<script type="py" src="src2disp/views.py"></script>
-<script type="py" src="src2disp/dc3d.py"></script>
-<script type="py">
+<script type="py" src="src2disp/views.py" config="./pyscript.json"></script>
+<script type="py" src="src2disp/dc3d.py" config="./pyscript.json"></script>
+<script type="py" config="./pyscript.json">
 import pandas as pd
 import numpy as np
 import math
