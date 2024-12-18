@@ -38,9 +38,9 @@
   <input id="mag" class="py-input" value='7.0' type="text"> Mw <br>
   <button id="calc" class="py-button" type="submit" py-click="calc()">Calc.</button><br>
 
-<py-script src="src2disp/views.py"></py-script>
-<py-script src="src2disp/dc3d.py"></py-script>
-<py-script>
+<script type="py" src="src2disp/views.py"></script>
+<script type="py" src="src2disp/dc3d.py"></script>
+<script type="py">
 import pandas as pd
 import numpy as np
 import math
@@ -106,7 +106,7 @@ def calc():
     sites = pd.read_csv(sitefile, delim_whitespace=True)
     driver(alp, dfsource, sites)
     
-</py-script>
+</script>
 
 <h3> Corresponding rectangular fault (output)</h3>
 <div id="input"></div>
