@@ -1,0 +1,79 @@
+<html lang="ja">
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css">
+  <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
+  <py-env>
+  </py-env>
+  <title>Calculate displacement for SGO-A sites</title>
+</head>
+
+<body>
+
+<h1>Source to Displacement via Okada's formulation for SGO-A sites</h1>
+<h3>NOTE:: This is written with PyScript (alpha-version), so some changes will be needed in the future.</h3>
+<p>Created by Watanabe and Ishikawa (2024)</p>
+<ul>
+<li>This program is distributed under MIT License (see below)</li>
+<li>For details and the use of results, please refer Okada (1992) [Bull. Seism. Soc. Am., 82, 1018-1040]. </li>
+<li>Okada's original FORTRAN code "DC3D" is distributed <a href="https://www.bosai.go.jp/e/dc3d.html">here</a>.</li>
+<li>Source parameters are available at, e.g., 
+<a href="https://www.hinet.bosai.go.jp/?LANG=ja">Hi-net</a>, 
+<a href="https://www.fnet.bosai.go.jp/top.php?LANG=ja">F-net</a>, or 
+<a href="https://www.data.jma.go.jp/svd/eqev/data/mech/cmt/top.html">JMA</a>.</li>
+<li>GEBCO 2023 Grid (<a href="https://doi.org/10.5285/f98b053b-0cbc-6c23-e053-6c86abc0af7b">GEBCO Compilation Group, 2023</a>) is used for the topography in the map.</li>
+</ul>
+
+<h2>Source information (input)</h2>
+  <input id="alp" class="py-input" value='0.6667' type="text"> alpha (default=2/3) <br>
+  <input id="lat" class="py-input" value='35.0' type="text"> Latitude  [deg] <br>
+  <input id="lon" class="py-input" value='140.0' type="text"> Longitude  [deg] <br>
+  <input id="dep" class="py-input" value='10.0' type="text"> Depth (> 0) [km] <br>
+  <input id="str" class="py-input" value='0.0' type="text"> Strike  [deg] <br>
+  <input id="dip" class="py-input" value='0.0' type="text"> Dip  [deg] <br>
+  <input id="rak" class="py-input" value='0.0' type="text"> Rake  [deg] <br>
+  <input id="mag" class="py-input" value='7.0' type="text"> Mw <br>
+  <button id="calc" class="py-button" type="submit" py-click="calc">Calc.</button><br>
+
+<h3> Corresponding rectangular fault (output)</h3>
+<div id="input"></div>
+<div id="flt"></div>
+
+<h2>Displacements (output)</h2>
+<p>Displacements at SGO-A sites</p>
+<div id="res"></div>
+<div id="map1"></div>
+<div id="map2"></div>
+
+<section class="pyscript">
+  <script type="py" src="sgoa_dc3d.py" config="pyscript.toml"></script>
+</section>
+
+<br><br>
+<div style="padding: 10px; margin-bottom: 10px; border: 1px dotted #333333;">
+<h3>MIT License</h3>
+<p>
+Copyright (c) 2024 Shun-ichi Watanabe and Tadashi Ishikawa<br><br>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:<br><br>
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.<br><br>
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+</p>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,4 @@
+name = "DC3D"
+description = "DC3D with PyScript."
+packages = ["pandas", "numpy", "matplotlib"]
+paths = ["src2disp/view.py", "src2disp/dc3d.py"]
