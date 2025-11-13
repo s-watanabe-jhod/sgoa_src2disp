@@ -1374,9 +1374,9 @@ def calc_dc3d(alpha, fault_para, site_list):
 		h4.append(90.-math.degrees(math.atan2(enu[1],enu[0])))
 	
 	# 結果をデータフレームに変換
-	datalist = {'Site':a, 'Latitude':b, 'Longitude':c, 'Disp-cm':h, 'Direction':hh,
+	datalist = {'Site':a, 'Latitude':b, 'Longitude':c, 'Disp-cm':h, 'Direction-deg':hh,
 				 'E-ward-cm':e, 'N-ward-cm':f,'U-ward-cm':g,
-			     'Distance':h3, 'Azimuth':h4,}
+			     'Distance-km':h3, 'Azimuth-deg':h4,}
 	df_result = pd.DataFrame(data = datalist).set_index('Site')
 	df_result = df_result.round(2)
 	df_result = df_result.sort_values('Disp-cm', ascending=False)
@@ -1529,5 +1529,6 @@ def calc(event):
 		dfsource = pd.DataFrame(faults, columns = col)
 
 		driver(alp, dfsource, sites)
+
 
 
