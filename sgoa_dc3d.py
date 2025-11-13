@@ -1327,6 +1327,8 @@ def calc_dc3d(alpha, fault_para, site_list):
 	g = []
 	h = []
 	hh = []
+	h3 = []
+	h4 = []
 	
 	# dc3d用にパラメータを変換
 	strike = np.radians(90.0 - fault_para['Strike'])
@@ -1368,10 +1370,13 @@ def calc_dc3d(alpha, fault_para, site_list):
 		g.append(uz)
 		h.append((ue**2.+un**2.)**0.5)
 		hh.append(90.-math.degrees(math.atan2(un,ue)))
+		h3.append((enu[0]**2.+enu[1]**2.)**0.5)
+		h4.append(90.-math.degrees(math.atan2(enu[1],enu[0])))
 	
 	# 結果をデータフレームに変換
 	datalist = {'Site':a, 'Latitude':b, 'Longitude':c, 'Disp-cm':h, 'Direction':hh,
-				 'E-ward-cm':e, 'N-ward-cm':f,'U-ward-cm':g}
+				 'E-ward-cm':e, 'N-ward-cm':f,'U-ward-cm':g,
+			     'Distance':h3, 'Azimuth':h4,}
 	df_result = pd.DataFrame(data = datalist).set_index('Site')
 	df_result = df_result.round(2)
 	df_result = df_result.sort_values('Disp-cm', ascending=False)
@@ -1524,4 +1529,5 @@ def calc(event):
 		dfsource = pd.DataFrame(faults, columns = col)
 
 		driver(alp, dfsource, sites)
+
 
