@@ -26,6 +26,10 @@ sites = pd.read_csv(sitefile, delim_whitespace=True)
 PI = math.pi
 PI2 = PI*2
 
+pd.set_option('display.max_rows', None)
+pd.set_option('display.max_columns', None)
+pd.set_option('display.width', None)
+
 class C0_t:
     __slots__ = ['alp1', 'alp2', 'alp3', 'alp4', 'alp5', 'sd', 'cd', 'sdsd',
         'cdcd', 'sdcd', 's2d', 'c2d']
