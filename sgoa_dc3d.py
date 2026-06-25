@@ -1323,6 +1323,7 @@ def calc_dc3d(alpha, fault_para, site_list):
 	'''
 	# 結果格納用の空のリストを用意(このやり方が一番速い)
 	a = []
+	a2 = []
 	b = []
 	c = []
 	d = []
