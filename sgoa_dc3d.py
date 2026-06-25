@@ -1382,7 +1382,9 @@ def calc_dc3d(alpha, fault_para, site_list):
 				 'E-ward-cm':e, 'N-ward-cm':f,'U-ward-cm':g,
 			     'Distance-km':h3, 'Azimuth-deg':h4,}
 	df_result = pd.DataFrame(data = datalist).set_index('Site')
-	df_result = df_result.round(2)
+	#df_result = df_result.round(2)
+	num_cols = df_result.select_dtypes(include="number").columns
+	df_result[num_cols] = df_result[num_cols].round(2)
 	df_result = df_result.sort_values('Disp-cm', ascending=False)
 	
 	return df_result
