@@ -1434,7 +1434,7 @@ def driver(alpha, dfsource, sites):
 	gridx = np.linspace(lonrng2[0], lonrng2[1], 21)[1:-1]
 	gridy = np.linspace(latrng2[0], latrng2[1], 21)[1:-1]
 	gx,gy = np.meshgrid(gridx,gridy)
-	gridsite = pd.DataFrame({"lon":gx.flatten(), "lat":gy.flatten(), "dep":0., "site":"grid", "type":"dummy"})
+	gridsite = pd.DataFrame({"lon":gx.flatten(), "lat":gy.flatten(), "dep":0., "site":"grid", "MTtype":"dummy"})
 	grdresult = calc_dc3d(alpha, dfsource.iloc[0,:], gridsite)
 	scl = grdresult["Disp-cm"].values.max()
 	x0 = grdresult["Longitude"].values
