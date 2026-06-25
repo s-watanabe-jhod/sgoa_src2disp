@@ -1365,7 +1365,7 @@ def calc_dc3d(alpha, fault_para, site_list):
 		ur = np.sqrt(ue**2 + un**2)
 		
 		# 結果をリストに追加
-		a.append(site['site'] + ": " + site['type'])
+		a.append(site['site'] + ": " + site['MTtype'])
 		b.append(site['lat'])
 		c.append(site['lon'])
 		d.append(site['dep'])
