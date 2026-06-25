@@ -300,7 +300,7 @@ def dc3d(alpha, x, y, z, depth, dip, al1, al2, aw1, aw2, disl1, disl2, disl3):
     if q == 0.0 and \
         (    (xi[0]*xi[1] <= 0.0 and et[0]*et[1] == 0.0) \
           or (et[0]*et[1] <= 0.0 and xi[0]*xi[1] == 0.0) ):
-#      *   go to 99                                                       05880015
+		#      *   go to 99                                                       05880015
         return None # -> modified later, return 0s
 
     ## c----- on negative extension of fault edge                              05890015
@@ -1383,8 +1383,8 @@ def calc_dc3d(alpha, fault_para, site_list):
 			     'Distance-km':h3, 'Azimuth-deg':h4,}
 	df_result = pd.DataFrame(data = datalist).set_index('Site')
 	#df_result = df_result.round(2)
-	print(df_result.dtypes)
-	print(df_result.select_dtypes(include="number").columns)
+	display(df_result.dtypes)
+	display(df_result.select_dtypes(include="number").columns)
 	num_cols = df_result.select_dtypes(include="number").columns
 	for col in num_cols:
 	    df_result[col] = pd.to_numeric(df_result[col], errors="coerce")
