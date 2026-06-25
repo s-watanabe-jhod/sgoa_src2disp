@@ -1365,7 +1365,7 @@ def calc_dc3d(alpha, fault_para, site_list):
 		ur = np.sqrt(ue**2 + un**2)
 		
 		# 結果をリストに追加
-		a.append(site['site'])
+		a.append(site['site'] + ": " + site['type'])
 		b.append(site['lat'])
 		c.append(site['lon'])
 		d.append(site['dep'])
@@ -1383,7 +1383,7 @@ def calc_dc3d(alpha, fault_para, site_list):
 			     'Distance-km':h3, 'Azimuth-deg':h4,}
 	df_result = pd.DataFrame(data = datalist).set_index('Site')
 	#df_result = df_result.round(2)
-	display(df_result.dtypes)
+	display(df_result)
 	display(df_result.select_dtypes(include="number").columns)
 	num_cols = df_result.select_dtypes(include="number").columns
 	for col in num_cols:
