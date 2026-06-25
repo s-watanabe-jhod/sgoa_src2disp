@@ -1365,7 +1365,8 @@ def calc_dc3d(alpha, fault_para, site_list):
 		ur = np.sqrt(ue**2 + un**2)
 		
 		# 結果をリストに追加
-		a.append(site['site'] + ": " + site['MTtype'])
+		a.append(site['site'])
+		a2.append(site['MTtype'])
 		b.append(site['lat'])
 		c.append(site['lon'])
 		d.append(site['dep'])
@@ -1378,13 +1379,11 @@ def calc_dc3d(alpha, fault_para, site_list):
 		h4.append(90.-math.degrees(math.atan2(enu[1],enu[0])))
 	
 	# 結果をデータフレームに変換
-	datalist = {'Site':a, 'Latitude':b, 'Longitude':c, 'Disp-cm':h, 'Direction-deg':hh,
+	datalist = {'Site':a, 'Org':a2, 'Latitude':b, 'Longitude':c, 'Disp-cm':h, 'Direction-deg':hh,
 				 'E-ward-cm':e, 'N-ward-cm':f,'U-ward-cm':g,
 			     'Distance-km':h3, 'Azimuth-deg':h4,}
 	df_result = pd.DataFrame(data = datalist).set_index('Site')
 	#df_result = df_result.round(2)
-	display(df_result)
-	display(df_result.select_dtypes(include="number").columns)
 	num_cols = df_result.select_dtypes(include="number").columns
 	for col in num_cols:
 	    df_result[col] = pd.to_numeric(df_result[col], errors="coerce")
