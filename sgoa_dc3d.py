@@ -1384,6 +1384,8 @@ def calc_dc3d(alpha, fault_para, site_list):
 	df_result = pd.DataFrame(data = datalist).set_index('Site')
 	#df_result = df_result.round(2)
 	num_cols = df_result.select_dtypes(include="number").columns
+	for col in num_cols:
+	    df_result[col] = pd.to_numeric(df_result[col], errors="coerce")
 	df_result[num_cols] = df_result[num_cols].round(2)
 	df_result = df_result.sort_values('Disp-cm', ascending=False)
 	
