@@ -22,6 +22,8 @@ global ax
 
 sitefile = open_url('./data/site_latlon.dat')
 sites = pd.read_csv(sitefile, delim_whitespace=True)
+tidefile = open_url('./data/tide_latlon.csv')
+tides = pd.read_csv(tidefile)
 
 PI = math.pi
 PI2 = PI*2
@@ -1393,7 +1395,7 @@ def calc_dc3d(alpha, fault_para, site_list):
 	
 	return df_result
 
-def driver(alpha, dfsource, sites):
+def driver(alpha, dfsource, sites, tides):
 	global ax1, ax2
 	
 	fig1 = plt.figure(figsize=(8,8))
@@ -1445,22 +1447,34 @@ def driver(alpha, dfsource, sites):
 			  scale_units="inches", color="gray", zorder=4, width=0.02)
 	ax2.set_title("Max arrow shows %4.1f cm disp." % scl)
 	
+	# tide deformation
+	result_tide = calc_dc3d(alpha, dfsource.iloc[0,:], tides)
+	x0 = result_tide["Longitude"].values
+	y0 = result_tide["Latitude"].values
+	dx = result_tide["E-ward-cm"].values / scl
+	dy = result_tide["N-ward-cm"].values / scl
+	ax2.quiver(x0, y0, dx, dy, units="inches", angles="xy", scale=1,
+			  scale_units="inches", color="navy", zorder=5, width=0.05)
+	df_tide = result_tide.sort_values('Disp-cm', ascending=True)
+	df_tide = df_tide[ df_tide["Disp-cm"] > 1.0 ]
+
 	# site deformation
-	result = calc_dc3d(alpha, dfsource.iloc[0,:], sites)
-	x0 = result["Longitude"].values
-	y0 = result["Latitude"].values
-	dx = result["E-ward-cm"].values / scl
-	dy = result["N-ward-cm"].values / scl
+	result_sgo = calc_dc3d(alpha, dfsource.iloc[0,:], sites)
+	x0 = result_sgo["Longitude"].values
+	y0 = result_sgo["Latitude"].values
+	dx = result_sgo["E-ward-cm"].values / scl
+	dy = result_sgo["N-ward-cm"].values / scl
 	ax1.quiver(x0, y0, dx, dy, units="inches", angles="xy", scale=1,
 			  scale_units="inches", color="royalblue", zorder=5, width=0.07)
 	ax2.quiver(x0, y0, dx, dy, units="inches", angles="xy", scale=1,
-			  scale_units="inches", color="royalblue", zorder=5, width=0.07)
-	df = result.sort_values('Disp-cm', ascending=True)
+			  scale_units="inches", color="royalblue", zorder=6, width=0.07)
+	df = result_sgo.sort_values('Disp-cm', ascending=True)
 	
 	# for plot figure
 	display(dfsource, target="input", append=False)
-	display(flt,target="flt", append=False)
-	display(result,target="res", append=False)
+	display(flt, target="flt", append=False)
+	display(result_sgo, target="res", append=False)
+	display(df_tide, target="res_tide", append=False)
 	imgfl = './data/gebco_2023_n48.0_s22.0_w121.0_e150.0_cm.jpeg'
 	async def imbyte(fl, fig1, fig2, lonrng1, latrng1, lonrng2, latrng2):
 		global ax1, ax2
@@ -1538,7 +1552,7 @@ def calc(event):
 		       'length-km', 'width-km', 'slip-cm', 'Eslip', 'Nslip']
 		dfsource = pd.DataFrame(faults, columns = col)
 
-		driver(alp, dfsource, sites)
+		driver(alp, dfsource, sites, tides)
 
 
 
