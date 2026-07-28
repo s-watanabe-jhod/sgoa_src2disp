@@ -1369,7 +1369,10 @@ def calc_dc3d(alpha, fault_para, site_list):
 		
 		# 結果をリストに追加
 		a.append(site['site'])
-		a2.append(site['MTtype'])
+		try:
+			a2.append(site['MTtype'])
+		except:
+			a2.append(site['type'])
 		b.append(site['lat'])
 		c.append(site['lon'])
 		d.append(site['dep'])
