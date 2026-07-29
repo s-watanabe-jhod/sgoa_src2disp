@@ -1449,7 +1449,7 @@ def driver(alpha, dfsource, sites, tides):
 	ax2.quiver(x0, y0, dx, dy, units="inches", angles="xy", scale=1,
 			  scale_units="inches", color="gray", zorder=4, width=0.02)
 	ax2.set_title("Max arrow shows %4.1f cm disp." % scl)
-	df_grid = grdresult["Latitude", "Disp-cm", "Direction-deg", "E-ward-cm", "N-ward-cm", "U-ward-cm"]
+	df_grid = grdresult[ ["Latitude", "Longitude", "Disp-cm", "Direction-deg", "E-ward-cm", "N-ward-cm", "U-ward-cm"] ]
 	
 	# tide deformation
 	result_tide = calc_dc3d(alpha, dfsource.iloc[0,:], tides)
