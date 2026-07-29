@@ -1394,7 +1394,7 @@ def calc_dc3d(alpha, fault_para, site_list):
 	for col in num_cols:
 	    df_result[col] = pd.to_numeric(df_result[col], errors="coerce")
 	df_result[num_cols] = df_result[num_cols].round(2)
-	df_result = df_result.sort_values('Disp-cm', ascending=False)
+	#df_result = df_result.sort_values('Disp-cm', ascending=False)
 	
 	return df_result
 
@@ -1448,6 +1448,21 @@ def driver(alpha, dfsource, sites, tides):
 	dy = grdresult["N-ward-cm"].values / scl
 	ax2.quiver(x0, y0, dx, dy, units="inches", angles="xy", scale=1,
 			  scale_units="inches", color="gray", zorder=4, width=0.02)
+	
+	dz = grdresult["U-ward-cm"].values
+	Z = dz.reshape(gx.shape)
+	vmax = np.nanmax(np.abs(Z))
+	b = 10 ** np.floor(np.log10(vmax))
+	vmax = b * (1 if vmax/b <= 1 else 2 if vmax/b <= 2 else 5 if vmax/b <= 5 else 10)
+	levels = np.linspace(-vmax, vmax, 11)
+	
+	cs1 = ax2.contour(gx, gy, Z, levels=levels[levels < 0], colors=plt.cm.PuBu(np.linspace(0.45, 0.95, 5)), linewidths=1.2, zorder=3)
+	cs2 = ax2.contour(gx, gy, Z, levels=levels[levels > 0], colors=plt.cm.PuRd(np.linspace(0.45, 0.95, 5)), linewidths=1.2, zorder=3)
+	cs0 = ax2.contour(gx, gy, Z, levels=[0], colors="k", linewidths=1.5, zorder=3)
+	ax2.clabel(cs1, fmt="%.2g cm", fontsize=8)
+	ax2.clabel(cs2, fmt="%.2g cm", fontsize=8)
+	ax2.clabel(cs0, fmt="0 cm", fontsize=8)
+	ax2.set_aspect("equal")
 	ax2.set_title("Max arrow shows %4.1f cm disp." % scl)
 	df_grid = grdresult[ ["Latitude", "Longitude", "Disp-cm", "Direction-deg", "E-ward-cm", "N-ward-cm", "U-ward-cm"] ]
 	
