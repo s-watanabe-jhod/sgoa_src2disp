@@ -1449,6 +1449,7 @@ def driver(alpha, dfsource, sites, tides):
 	ax2.quiver(x0, y0, dx, dy, units="inches", angles="xy", scale=1,
 			  scale_units="inches", color="gray", zorder=4, width=0.02)
 	ax2.set_title("Max arrow shows %4.1f cm disp." % scl)
+	df_grid = grdresult.copy
 	
 	# tide deformation
 	result_tide = calc_dc3d(alpha, dfsource.iloc[0,:], tides)
@@ -1478,6 +1479,7 @@ def driver(alpha, dfsource, sites, tides):
 	display(flt, target="flt", append=False)
 	display(result_sgo, target="res", append=False)
 	display(df_tide, target="res_tide", append=False)
+	display(df_grid, target="res_grid", append=False)
 	imgfl = './data/gebco_2023_n48.0_s22.0_w121.0_e150.0_cm.jpeg'
 	async def imbyte(fl, fig1, fig2, lonrng1, latrng1, lonrng2, latrng2):
 		global ax1, ax2
