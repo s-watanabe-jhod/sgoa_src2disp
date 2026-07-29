@@ -1447,7 +1447,7 @@ def driver(alpha, dfsource, sites, tides):
 	dx = grdresult["E-ward-cm"].values / scl
 	dy = grdresult["N-ward-cm"].values / scl
 	ax2.quiver(x0, y0, dx, dy, units="inches", angles="xy", scale=1,
-			  scale_units="inches", color="gray", zorder=4, width=0.02)
+			  scale_units="inches", color="gray", zorder=5, width=0.02)
 	
 	dz = grdresult["U-ward-cm"].values
 	Z = dz.reshape(gx.shape)
@@ -1456,9 +1456,9 @@ def driver(alpha, dfsource, sites, tides):
 	vmax = b * (1 if vmax/b <= 1 else 2 if vmax/b <= 2 else 5 if vmax/b <= 5 else 10)
 	levels = np.linspace(-vmax, vmax, 11)
 	
-	cs1 = ax2.contour(gx, gy, Z, levels=levels[levels < 0], colors=plt.cm.PuBu(np.linspace(0.45, 0.95, 5)), linewidths=1.2, zorder=3)
-	cs2 = ax2.contour(gx, gy, Z, levels=levels[levels > 0], colors=plt.cm.PuRd(np.linspace(0.45, 0.95, 5)), linewidths=1.2, zorder=3)
-	cs0 = ax2.contour(gx, gy, Z, levels=[0], colors="k", linewidths=1.5, zorder=3)
+	cs1 = ax2.contour(gx, gy, Z, levels=levels[levels < 0], colors=plt.cm.PuBu(np.linspace(0.45, 0.95, 5)), linewidths=1.2, zorder=4)
+	cs2 = ax2.contour(gx, gy, Z, levels=levels[levels > 0], colors=plt.cm.PuRd(np.linspace(0.45, 0.95, 5)), linewidths=1.2, zorder=4)
+	cs0 = ax2.contour(gx, gy, Z, levels=[0], colors="k", linewidths=1.5, zorder=4)
 	ax2.clabel(cs1, fmt="%.2g cm", fontsize=8)
 	ax2.clabel(cs2, fmt="%.2g cm", fontsize=8)
 	ax2.clabel(cs0, fmt="0 cm", fontsize=8)
@@ -1473,7 +1473,7 @@ def driver(alpha, dfsource, sites, tides):
 	dx = result_tide["E-ward-cm"].values / scl
 	dy = result_tide["N-ward-cm"].values / scl
 	ax2.quiver(x0, y0, dx, dy, units="inches", angles="xy", scale=1,
-			  scale_units="inches", color="navy", zorder=5, width=0.05)
+			  scale_units="inches", color="navy", zorder=6, width=0.05)
 	df_tide = result_tide.sort_values('Disp-cm', ascending=True)
 	df_tide = df_tide[ df_tide["Disp-cm"] > 1.0 ]
 
@@ -1486,7 +1486,7 @@ def driver(alpha, dfsource, sites, tides):
 	ax1.quiver(x0, y0, dx, dy, units="inches", angles="xy", scale=1,
 			  scale_units="inches", color="royalblue", zorder=5, width=0.07)
 	ax2.quiver(x0, y0, dx, dy, units="inches", angles="xy", scale=1,
-			  scale_units="inches", color="royalblue", zorder=6, width=0.07)
+			  scale_units="inches", color="royalblue", zorder=7, width=0.07)
 	df = result_sgo.sort_values('Disp-cm', ascending=True)
 	
 	# for plot figure
