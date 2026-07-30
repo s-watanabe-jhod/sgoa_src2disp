@@ -26,6 +26,14 @@
 </ul>
 
 <h2>Source information (input)</h2>
+
+<p>
+  <label><input type="radio" name="mode" value="cmt" checked onchange="document.getElementById('input_cmt').style.display='block'; document.getElementById('input_rect').style.display='none';"> CMT (scaling)</label>
+  &nbsp;
+  <label><input type="radio" name="mode" value="rect" onchange="document.getElementById('input_cmt').style.display='none'; document.getElementById('input_rect').style.display='block';"> Rectangular fault (GSI style)</label>
+</p>
+
+<div id="input_cmt">
   <input id="alp" class="py-input" value='0.6667' type="text"> alpha (default=2/3) <br>
   <input id="lat" class="py-input" value='35.0' type="text"> Latitude  [deg] <br>
   <input id="lon" class="py-input" value='140.0' type="text"> Longitude  [deg] <br>
@@ -35,22 +43,38 @@
   <input id="rak" class="py-input" value='0.0' type="text"> Rake  [deg] <br>
   <input id="mag" class="py-input" value='7.0' type="text"> Mw <br>
   <button id="calc" class="py-button" type="submit" py-click="calc">Calc.</button><br>
+</div>
 
-<h3> Corresponding rectangular fault (output)</h3>
+<div id="input_rect" style="display:none;">
+  <input id="r_alp" class="py-input" value='0.6667' type="text"> alpha (default=2/3) <br>
+  <input id="r_lat" class="py-input" value='35.0' type="text"> Upper-left Latitude [deg] <br>
+  <input id="r_lon" class="py-input" value='140.0' type="text"> Upper-left Longitude [deg] <br>
+  <input id="r_dep" class="py-input" value='5.0' type="text"> Upper-left Depth (> 0) [km] <br>
+  <input id="r_str" class="py-input" value='0.0' type="text"> Strike [deg] <br>
+  <input id="r_dip" class="py-input" value='20.0' type="text"> Dip [deg] <br>
+  <input id="r_rak" class="py-input" value='90.0' type="text"> Rake [deg] <br>
+  <input id="r_len" class="py-input" value='40.0' type="text"> Length [km] <br>
+  <input id="r_wid" class="py-input" value='20.0' type="text"> Width [km] <br>
+  <input id="r_slip" class="py-input" value='1.0' type="text"> Slip [m] <br>
+  <button id="calc_rect" class="py-button" type="submit" py-click="calc_rect">Calc.</button><br>
+</div>
+
+<div id="output_section" style="display:none;">
+<h3> Corresponding rectangular fault</h3>
 <div id="input"></div>
 <div id="flt"></div>
 
-<h2>Displacements (output)</h2>
-<p>Displacements at SGO-A sites</p>
+<h2>Displacements at GNSS-A sites</h2>
 <div id="res"></div>
-<div id="map1"></div>
-<div id="map2"></div>
 
-<h3>Displacements at Tide observation sites</h3>
+<h2>Displacements at Tide observation sites</h2>
 <div id="res_tide"></div>
 
-<h3>Displacements at grid points</h3>
 <div id="res_grid"></div>
+
+<div id="map1"></div>
+<div id="map2"></div>
+</div>
 
 <section class="pyscript">
   <script type="py" src="sgoa_dc3d.py" config="pyscript.toml"></script>
