@@ -3,6 +3,7 @@ import os
 import io
 import math
 import asyncio
+import base64
 import pandas as pd
 import numpy as np
 import math
@@ -10,6 +11,7 @@ from math import sin, cos, tan, atan, radians, atan2
 from math import sqrt, log
 import matplotlib
 import pyodide
+import js
 from pyodide.http import open_url
 from pyscript import display
 from pyweb import pydom
@@ -1282,6 +1284,13 @@ def uc(xi, et, q, z, disl1, disl2, disl3, C0, C2):
 
 
 
+def make_csv_download_link(df, filename, label="Download CSV"):
+	csv_str = '﻿' + df.to_csv()
+	b64 = base64.b64encode(csv_str.encode('utf-8')).decode()
+	href = f'data:text/csv;charset=utf-8;base64,{b64}'
+	return f'<a href="{href}" download="{filename}">{label}</a>'
+
+
 def xyz2enu(center, v_xyz):
 	"""
 	XYZ座標でのベクトルv_xyzを
@@ -1398,55 +1407,183 @@ def calc_dc3d(alpha, fault_para, site_list):
 	
 	return df_result
 
-def driver(alpha, dfsource, sites, tides):
+def plot_beachball(ax, lon, lat, strike, dip, rake, size=0.025):
+	'''
+	震源メカニズム解ビーチボール描画
+	下半球等積投影（Lambert）+ contourf方式
+	P軸・T軸の放射パターンで圧縮象限を判定
+	'''
+	str_r = radians(strike)
+	dip_r = radians(dip)
+	rake_r = radians(rake)
+
+	# fault normal (NED: North, East, Down)
+	n_n = -sin(dip_r)*sin(str_r)
+	n_e =  sin(dip_r)*cos(str_r)
+	n_d = -cos(dip_r)
+
+	# slip direction (NED)
+	d_n = cos(rake_r)*cos(str_r) + sin(rake_r)*cos(dip_r)*sin(str_r)
+	d_e = cos(rake_r)*sin(str_r) - sin(rake_r)*cos(dip_r)*cos(str_r)
+	d_d = -sin(rake_r)*sin(dip_r)
+
+	n_grid = 101
+	x = np.linspace(-1, 1, n_grid)
+	y = np.linspace(-1, 1, n_grid)
+	X, Y = np.meshgrid(x, y)
+	R = np.sqrt(X**2 + Y**2)
+
+	polarity = np.full_like(R, np.nan)
+	for i in range(n_grid):
+		for j in range(n_grid):
+			r = R[i, j]
+			if r > 1.0:
+				continue
+			# equal-area (Lambert): r = sqrt(2)*sin(takeoff/2)
+			arg = r / math.sqrt(2.0)
+			if arg > 1.0:
+				arg = 1.0
+			takeoff = 2.0 * math.asin(arg)
+			# azimuth: x=East, y=North
+			azimuth = atan2(X[i,j], Y[i,j])
+
+			# ray direction (NED)
+			gamma_n = sin(takeoff) * cos(azimuth)
+			gamma_e = sin(takeoff) * sin(azimuth)
+			gamma_d = cos(takeoff)
+
+			# P-wave radiation pattern
+			gn = gamma_n*n_n + gamma_e*n_e + gamma_d*n_d
+			gd = gamma_n*d_n + gamma_e*d_e + gamma_d*d_d
+			polarity[i,j] = gn * gd
+
+	polarity[R > 1.0] = np.nan
+
+	# clip to circle using matplotlib clip_path
+	theta = np.linspace(0, 2*PI, 181)
+	cx = np.cos(theta)
+	cy = np.sin(theta)
+
+	from matplotlib.patches import Circle
+	clip_circle = Circle((lon, lat), size, transform=ax.transData)
+
+	# 白背景
+	ax.fill(lon + size*cx, lat + size*cy, 'white', zorder=3)
+	# 圧縮象限（正）=黒
+	cs = ax.contourf(lon + size*X, lat + size*Y, polarity,
+	            levels=[-1e10, 0, 1e10], colors=['white', 'k'], zorder=3.1)
+	for col in cs.collections:
+		col.set_clip_path(clip_circle)
+	# 外円線
+	ax.plot(lon + size*cx, lat + size*cy, 'k-', linewidth=1.0, zorder=3.2)
+	# 節面線
+	cs2 = ax.contour(lon + size*X, lat + size*Y, polarity,
+	           levels=[0], colors='k', linewidths=0.8, zorder=3.2)
+	for col in cs2.collections:
+		col.set_clip_path(clip_circle)
+
+
+def plot_fault_rect(ax, lat_ul, lon_ul, dep_ul, strike, dip, rake, length, width):
+	'''
+	矩形断層の四隅を地図上にプロット
+	左上端から走向・傾斜方向に四隅を計算
+	すべり方向を黄色矢印で表示
+	'''
+	strike_rad = radians(strike)
+	dip_rad = radians(dip)
+	km_per_deg_lat = 111.32
+	km_per_deg_lon = 111.32 * cos(radians(lat_ul))
+
+	dip_azimuth = strike_rad + radians(90.0)
+
+	corners_lon = []
+	corners_lat = []
+	for sl, sw in [(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)]:
+		dl = length * sl
+		dw = width * sw
+		dlat = dl * cos(strike_rad) / km_per_deg_lat + dw * cos(dip_rad) * cos(dip_azimuth) / km_per_deg_lat
+		dlon = dl * sin(strike_rad) / km_per_deg_lon + dw * cos(dip_rad) * sin(dip_azimuth) / km_per_deg_lon
+		corners_lat.append(lat_ul + dlat)
+		corners_lon.append(lon_ul + dlon)
+
+	ax.plot(corners_lon, corners_lat, 'k-', linewidth=0.8, zorder=10)
+	ax.plot(corners_lon[:2], corners_lat[:2], 'k-', linewidth=1.8, zorder=11)
+
+	# すべり方向の矢印（断層中心から）
+	center_lat = lat_ul + (length/2.0) * cos(strike_rad) / km_per_deg_lat \
+	             + (width/2.0) * cos(dip_rad) * cos(dip_azimuth) / km_per_deg_lat
+	center_lon = lon_ul + (length/2.0) * sin(strike_rad) / km_per_deg_lon \
+	             + (width/2.0) * cos(dip_rad) * sin(dip_azimuth) / km_per_deg_lon
+
+	# slip方向: strike方向成分(cos(rake)) + dip水平成分(sin(rake)*cos(dip))
+	rake_rad = radians(rake)
+	slip_az = strike_rad + atan2(sin(rake_rad) * cos(dip_rad), cos(rake_rad))
+	arrow_len = sqrt(0.075 * length * width)
+	dlat_arrow = arrow_len * cos(slip_az) / km_per_deg_lat
+	dlon_arrow = arrow_len * sin(slip_az) / km_per_deg_lon
+
+	from matplotlib.patches import FancyArrowPatch
+	arrow = FancyArrowPatch(
+	    (center_lon, center_lat),
+	    (center_lon + dlon_arrow, center_lat + dlat_arrow),
+	    arrowstyle='-|>', mutation_scale=20,
+	    linewidth=2.5, edgecolor='k', facecolor='white', zorder=12)
+	ax.add_patch(arrow)
+
+
+def driver(alpha, dfsource, sites, tides, mode="cmt", rect_ul=None):
 	global ax1, ax2
-	
+
 	fig1 = plt.figure(figsize=(8,8))
 	fig2 = plt.figure(figsize=(8,8))
 	ax1 = fig1.add_subplot(1,1,1)
 	ax2 = fig2.add_subplot(1,1,1)
 	lonrng1 = [121., 150.]
 	latrng1 = [22., 48.]
-	
+
 	flon = dfsource.Longitude.values[0]
 	flat = dfsource.Latitude.values[0]
-	lo = round(flon)
-	la = round(flat)
-	lonrng2 = [lo-1., lo+1.]
-	latrng2 = [la-1., la+1.]
-	
+	lo = flon
+	la = flat
+	lonrng2 = [lo-0.5, lo+0.5]
+	latrng2 = [la-0.5, la+0.5]
+
 	ax1.set_xlim(lonrng1)
 	ax1.set_ylim(latrng1)
 	ax2.set_xlim(lonrng2)
 	ax2.set_ylim(latrng2)
 	flt = ""
-	
-	# fault CMT
-	loc = dfsource.loc[0,['Longitude','Latitude']]
-	mec = dfsource.loc[0,['Strike','Dip','Rake']]
-	#beach1 = beach(mec, xy=loc, width=0.2, linewidth=0.4, facecolor="darkmagenta", zorder=3)
-	#ax.add_collection(beach1)
-	ax1.plot(dfsource.Longitude, dfsource.Latitude, linestyle="None",
-			c="darkmagenta", marker='*', markersize="25", zorder=3)
-	ax2.plot(dfsource.Longitude, dfsource.Latitude, linestyle="None",
-			c="darkmagenta", marker='*', markersize="25", zorder=3)
+
+	# fault source on map
+	if mode == "rect" and rect_ul is not None:
+		lat_ul, lon_ul, dep_ul, strike, dip, rake, length, width = rect_ul
+		plot_fault_rect(ax2, lat_ul, lon_ul, dep_ul, strike, dip, rake, length, width)
+		ax1.plot(dfsource.Longitude, dfsource.Latitude, linestyle="None",
+				c="darkmagenta", marker='*', markersize="25", zorder=3)
+	else:
+		strike = dfsource.loc[0, 'Strike']
+		dip = dfsource.loc[0, 'Dip']
+		rake = dfsource.loc[0, 'Rake']
+		ax1.plot(dfsource.Longitude, dfsource.Latitude, linestyle="None",
+				c="darkmagenta", marker='*', markersize="25", zorder=3)
+		plot_beachball(ax2, flon, flat, strike, dip, rake)
 	
 	ans = "done"
 	flt += "  Length: %5.1f km, Width: %5.1f km, Slip: %5.1f cm" \
 		  % (dfsource['length-km']*2.,dfsource['width-km']*2.,dfsource['slip-cm'])
 	
 	# grid deformation (for narrow scale)
-	gridx = np.linspace(lonrng2[0], lonrng2[1], 21)[1:-1]
-	gridy = np.linspace(latrng2[0], latrng2[1], 21)[1:-1]
+	gridx = np.linspace(lonrng2[0], lonrng2[1], 41)[1:-1]
+	gridy = np.linspace(latrng2[0], latrng2[1], 41)[1:-1]
 	gx,gy = np.meshgrid(gridx,gridy)
 	gridsite = pd.DataFrame({"lon":gx.flatten(), "lat":gy.flatten(), "dep":0., "site":"grid", "MTtype":"dummy"})
 	grdresult = calc_dc3d(alpha, dfsource.iloc[0,:], gridsite)
 	scl = grdresult["Disp-cm"].values.max()
-	x0 = grdresult["Longitude"].values
-	y0 = grdresult["Latitude"].values
-	dx = grdresult["E-ward-cm"].values / scl
-	dy = grdresult["N-ward-cm"].values / scl
-	ax2.quiver(x0, y0, dx, dy, units="inches", angles="xy", scale=1,
+	# quiver with subsampled grid (every 2nd point)
+	E_grid = grdresult["E-ward-cm"].values.reshape(gx.shape)
+	N_grid = grdresult["N-ward-cm"].values.reshape(gx.shape)
+	ax2.quiver(gx[::2,::2], gy[::2,::2], E_grid[::2,::2]/scl, N_grid[::2,::2]/scl,
+			  units="inches", angles="xy", scale=1,
 			  scale_units="inches", color="gray", zorder=5, width=0.02)
 	
 	dz = grdresult["U-ward-cm"].values
@@ -1456,14 +1593,19 @@ def driver(alpha, dfsource, sites, tides):
 	vmax = b * (1 if vmax/b <= 1 else 2 if vmax/b <= 2 else 5 if vmax/b <= 5 else 10)
 	levels = np.linspace(-vmax, vmax, 11)
 	
-	cs1 = ax2.contour(gx, gy, Z, levels=levels[levels < 0], colors=plt.cm.PuBu(np.linspace(0.45, 0.95, 5)), linewidths=1.2, zorder=4)
-	cs2 = ax2.contour(gx, gy, Z, levels=levels[levels > 0], colors=plt.cm.PuRd(np.linspace(0.45, 0.95, 5)), linewidths=1.2, zorder=4)
-	cs0 = ax2.contour(gx, gy, Z, levels=[0], colors="k", linewidths=1.5, zorder=4)
-	ax2.clabel(cs1, fmt="%.2g cm", fontsize=8)
-	ax2.clabel(cs2, fmt="%.2g cm", fontsize=8)
-	ax2.clabel(cs0, fmt="0 cm", fontsize=8)
+	zmin, zmax = np.nanmin(Z), np.nanmax(Z)
+	neg_levels = levels[(levels < 0) & (levels >= zmin)]
+	pos_levels = levels[(levels > 0) & (levels <= zmax)]
+	if len(neg_levels) > 0:
+		cs1 = ax2.contour(gx, gy, Z, levels=neg_levels, colors=plt.cm.PuBu(np.linspace(0.45, 0.95, max(len(neg_levels),1))), linewidths=1.2, zorder=4)
+		ax2.clabel(cs1, fmt="%.2g cm", fontsize=8)
+	if len(pos_levels) > 0:
+		cs2 = ax2.contour(gx, gy, Z, levels=pos_levels, colors=plt.cm.PuRd(np.linspace(0.45, 0.95, max(len(pos_levels),1))), linewidths=1.2, zorder=4)
+		ax2.clabel(cs2, fmt="%.2g cm", fontsize=8)
+	if zmin < 0 and zmax > 0:
+		cs0 = ax2.contour(gx, gy, Z, levels=[0], colors="k", linewidths=0.8, linestyles="dotted", zorder=4)
+		ax2.clabel(cs0, fmt="0 cm", fontsize=8)
 	ax2.set_aspect("equal")
-	ax2.set_title("Max arrow shows %4.1f cm disp." % scl)
 	df_grid = grdresult[ ["Latitude", "Longitude", "Disp-cm", "Direction-deg", "E-ward-cm", "N-ward-cm", "U-ward-cm"] ]
 	
 	# tide deformation
@@ -1472,8 +1614,8 @@ def driver(alpha, dfsource, sites, tides):
 	y0 = result_tide["Latitude"].values
 	dx = result_tide["E-ward-cm"].values / scl
 	dy = result_tide["N-ward-cm"].values / scl
-	ax2.quiver(x0, y0, dx, dy, units="inches", angles="xy", scale=1,
-			  scale_units="inches", color="navy", zorder=6, width=0.05)
+	q_tide = ax2.quiver(x0, y0, dx, dy, units="inches", angles="xy", scale=1,
+			  scale_units="inches", color="navy", zorder=5.5, width=0.03)
 	df_tide = result_tide.sort_values('Disp-cm', ascending=True)
 	df_tide = df_tide[ df_tide["Disp-cm"] > 1.0 ]
 
@@ -1484,17 +1626,54 @@ def driver(alpha, dfsource, sites, tides):
 	dx = result_sgo["E-ward-cm"].values / scl
 	dy = result_sgo["N-ward-cm"].values / scl
 	ax1.quiver(x0, y0, dx, dy, units="inches", angles="xy", scale=1,
-			  scale_units="inches", color="royalblue", zorder=5, width=0.07)
-	ax2.quiver(x0, y0, dx, dy, units="inches", angles="xy", scale=1,
-			  scale_units="inches", color="royalblue", zorder=7, width=0.07)
+			  scale_units="inches", color="red", zorder=6, width=0.03)
+	q_sgo = ax2.quiver(x0, y0, dx, dy, units="inches", angles="xy", scale=1,
+			  scale_units="inches", color="red", zorder=7, width=0.03)
+
+	# scale arrows in legend area
+	# choose a "nice" scale value
+	nice_vals = [0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500]
+	scale_cm = nice_vals[0]
+	for v in nice_vals:
+		if v <= scl * 0.6:
+			scale_cm = v
+	scale_label = '%g cm' % scale_cm
+
+	ax2.quiverkey(q_sgo, 0.15, 1.04, scale_cm / scl, scale_label + ' (GNSS-A)',
+	              labelpos='E', coordinates='axes', fontproperties={'size': 9},
+	              labelsep=0.05)
+	ax2.quiverkey(q_tide, 0.55, 1.04, scale_cm / scl, scale_label + ' (Tide)',
+	              labelpos='E', coordinates='axes', fontproperties={'size': 9},
+	              labelsep=0.05)
 	df = result_sgo.sort_values('Disp-cm', ascending=True)
 	
-	# for plot figure
+	# show output section and display results
+	js.document.getElementById("output_section").style.display = "block"
 	display(dfsource, target="input", append=False)
 	display(flt, target="flt", append=False)
-	display(result_sgo, target="res", append=False)
-	display(df_tide, target="res_tide", append=False)
-	display(df_grid, target="res_grid", append=False)
+
+	# SGO-A: filter to sites with any ENU component > 1mm (0.1 cm)
+	sgo_filtered = result_sgo[
+		(result_sgo["E-ward-cm"].abs() > 0.1) |
+		(result_sgo["N-ward-cm"].abs() > 0.1) |
+		(result_sgo["U-ward-cm"].abs() > 0.1)
+	].sort_values('Disp-cm', ascending=False)
+	display("Sites with any component exceeding 1 mm:", target="res", append=False)
+	display(sgo_filtered, target="res", append=True)
+	js.document.getElementById("res").innerHTML += '<br>' + make_csv_download_link(result_sgo, "gnssa_displacement.csv", "Download CSV for all GNSS-A sites")
+
+	# Tide: filter to sites with any ENU component > 1cm
+	tide_filtered = result_tide[
+		(result_tide["E-ward-cm"].abs() > 1.0) |
+		(result_tide["N-ward-cm"].abs() > 1.0) |
+		(result_tide["U-ward-cm"].abs() > 1.0)
+	].sort_values('Disp-cm', ascending=False)
+	display("Sites with any component exceeding 1 cm:", target="res_tide", append=False)
+	display(tide_filtered, target="res_tide", append=True)
+	js.document.getElementById("res_tide").innerHTML += '<br>' + make_csv_download_link(result_tide, "tide_displacement.csv", "Download CSV for all Tide sites")
+
+	# Grid: CSV download only
+	js.document.getElementById("res_grid").innerHTML = make_csv_download_link(df_grid, "grid_displacement.csv", "Download Grid CSV")
 	imgfl = './data/gebco_2023_n48.0_s22.0_w121.0_e150.0_cm.jpeg'
 	async def imbyte(fl, fig1, fig2, lonrng1, latrng1, lonrng2, latrng2):
 		global ax1, ax2
@@ -1507,13 +1686,102 @@ def driver(alpha, dfsource, sites, tides):
 		display(fig1, target="map1", append=False)
 		#close-up
 		ax2.imshow(im, extent=(lonrng1[0],lonrng1[1],latrng1[0],latrng1[1]), alpha=0.5)
-		fig2.tight_layout()
+		fig2.subplots_adjust(top=0.92)
 		display(fig2, target="map2", append=False)
 	
 	loop = asyncio.get_event_loop()
 	loop.run_until_complete(imbyte(imgfl, fig1, fig2, lonrng1, latrng1, lonrng2, latrng2))
 	
 	return
+
+
+def ul2center(lat_ul, lon_ul, dep_ul, strike, dip, length, width):
+	'''
+	左上端座標から断層中心座標を計算する
+	strike方向にlength/2, dip方向にwidth/2移動
+	'''
+	strike_rad = radians(strike)
+	dip_rad = radians(dip)
+	km_per_deg_lat = 111.32
+	km_per_deg_lon = 111.32 * cos(radians(lat_ul))
+
+	# strike方向にlength/2
+	dl = length / 2.0
+	dlat_s = dl * cos(strike_rad) / km_per_deg_lat
+	dlon_s = dl * sin(strike_rad) / km_per_deg_lon
+
+	# dip方向にwidth/2（水平成分）
+	dw = width / 2.0
+	dip_horizontal = dw * cos(dip_rad)
+	dip_azimuth = strike_rad + radians(90.0)
+	dlat_d = dip_horizontal * cos(dip_azimuth) / km_per_deg_lat
+	dlon_d = dip_horizontal * sin(dip_azimuth) / km_per_deg_lon
+	ddep = dw * sin(dip_rad)
+
+	lat_c = lat_ul + dlat_s + dlat_d
+	lon_c = lon_ul + dlon_s + dlon_d
+	dep_c = dep_ul + ddep
+
+	return lat_c, lon_c, dep_c
+
+
+def calc_rect(event):
+	'''矩形断層直接指定モード（GSI形式：左上端基準）'''
+	display("",target="input", append=False)
+	display("",target="flt", append=False)
+	display("",target="res", append=False)
+	display("",target="map1", append=False)
+	display("",target="map2", append=False)
+	display("",target="res_tide", append=False)
+	display("",target="res_grid", append=False)
+
+	try:
+		alp = float(pydom["input#r_alp"][0].value)
+		lat_ul = float(pydom["input#r_lat"][0].value)
+		lon_ul = float(pydom["input#r_lon"][0].value)
+		dep_ul = float(pydom["input#r_dep"][0].value)
+		strike = float(pydom["input#r_str"][0].value)
+		dip = float(pydom["input#r_dip"][0].value)
+		rake = float(pydom["input#r_rak"][0].value)
+		length = float(pydom["input#r_len"][0].value)
+		width = float(pydom["input#r_wid"][0].value)
+		slip = float(pydom["input#r_slip"][0].value) * 100.0  # m -> cm
+
+		chk = alp > 0.
+		chk = chk and (lat_ul <= 90.) and (lat_ul >= -90.)
+		chk = chk and (lon_ul <= 180.) and (lon_ul >= -180.)
+		chk = chk and (dep_ul > 0.)
+		chk = chk and (strike <= 360.) and (strike >= -360.)
+		chk = chk and (dip <= 90.) and (dip >= 0.)
+		chk = chk and (rake <= 180.) and (rake >= -180.)
+		chk = chk and (length > 0.)
+		chk = chk and (width > 0.)
+		chk = chk and (slip > 0.)
+	except:
+		chk = False
+
+	if not chk:
+		display("ERROR: invalid fault parameters", target='input', append=False)
+	else:
+		lat_c, lon_c, dep_c = ul2center(lat_ul, lon_ul, dep_ul, strike, dip, length, width)
+
+		al = length / 2.0
+		aw = width / 2.0
+
+		pi = 3.14159265359
+		estr = (90. - strike) * pi / 180.0
+		dip_slip = slip * math.sin(rake * pi / 180.0)
+		strike_slip = slip * math.cos(rake * pi / 180.0)
+		Eslip = strike_slip * math.cos(estr) - dip_slip * math.sin(estr)
+		Nslip = strike_slip * math.sin(estr) + dip_slip * math.cos(estr)
+
+		faults = [['rect_input', lat_c, lon_c, dep_c, strike, dip, rake, al, aw, slip, Eslip, Nslip]]
+		col = ['ID', 'Latitude', 'Longitude', 'Depth', 'Strike', 'Dip', 'Rake',
+		       'length-km', 'width-km', 'slip-cm', 'Eslip', 'Nslip']
+		dfsource = pd.DataFrame(faults, columns=col)
+
+		rect_ul = (lat_ul, lon_ul, dep_ul, strike, dip, rake, length, width)
+		driver(alp, dfsource, sites, tides, mode="rect", rect_ul=rect_ul)
 
 
 def calc(event):
@@ -1568,11 +1836,8 @@ def calc(event):
 		aw = width /2.0
 
 		faults =[['fwd_input', lat, lon, dep, str, dip, rak, al, aw, slip, Eslip, Nslip]]
-		col = ['ID', 'Latitude', 'Longitude', 'Depth', 'Strike', 'Dip', 'Rake', 
+		col = ['ID', 'Latitude', 'Longitude', 'Depth', 'Strike', 'Dip', 'Rake',
 		       'length-km', 'width-km', 'slip-cm', 'Eslip', 'Nslip']
 		dfsource = pd.DataFrame(faults, columns = col)
 
-		driver(alp, dfsource, sites, tides)
-
-
-
+		driver(alp, dfsource, sites, tides, mode="cmt")
